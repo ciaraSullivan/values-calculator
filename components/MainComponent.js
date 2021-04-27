@@ -1,4 +1,5 @@
 import React, { Component } from "react"
+import { Alert } from "react-native"
 import { Text, View, StyleSheet, Button, Modal, TouchableOpacity, TextInput } from "react-native"
 import { BottomSheet, ListItem } from "react-native-elements"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
@@ -25,46 +26,45 @@ class Main extends Component {
 				},
 				{
 					title: "example 1",
-					value: "869",
+					value: "822",
 					onPress: () => {
-						this._onPressButton("869")
+						this._onPressButton("822")
 						this.setIsVisible(false)
 					},
-				},
-				{
-					title: "Add",
-					containerStyle: { backgroundColor: "green" },
-					titleStyle: { color: "white" },
-					onPress: () => {
-						this.toggleModal()
-					},
-				},
-				{
-					title: "Cancel",
-					containerStyle: { backgroundColor: "red" },
-					titleStyle: { color: "white" },
-					onPress: () => this.setIsVisible(false),
 				},
 			],
 		}
 	}
 
 	addValue() {
-		const name = this.state.valueName
-		const val = this.state.valueNumber
-		const newValue = {
-			title: name,
-			value: val,
-			onPress: () => {
-				this._onPressButton(val)
-				this.setIsVisible(false)
-			},
-		}
+		if (Number(this.state.valueNumber)) {
+			const newValue = {
+				title: this.state.valueName,
+				value: this.state.valueNumber,
+				onPress: () => {
+					this._onPressButton(this.state.valueNumber)
+					this.setIsVisible(false)
+				},
+			}
 
-		this.setState({
-			myValues: this.state.myValues.unshift(newValue),
-		})
-		console.log(this.state.myValues)
+			const newMyValues = [newValue, ...this.state.myValues]
+
+			this.setState({
+				myValues: newMyValues,
+				valueName: "",
+				valueNumber: "",
+			})
+			console.log(newMyValues)
+			this.toggleModal()
+		} else {
+			Alert.alert("Invalid Number", "Please enter a valid number as the value.", [
+				{
+					text: "Ok",
+					style: "cancel",
+					onPress: () => console.log("Cancel Pressed"),
+				},
+			])
+		}
 	}
 
 	calculationResult() {
@@ -157,6 +157,7 @@ class Main extends Component {
 				</TouchableOpacity>
 			)
 		}
+
 		return (
 			<SafeAreaProvider>
 				<SafeAreaView style={{ flex: 1 }}>
@@ -174,30 +175,78 @@ class Main extends Component {
 							<View style={styles.numbers}>{rows}</View>
 							<View style={styles.operations}>{ops}</View>
 						</View>
+						<Button
+							title='My Values'
+							style={styles.valueBtn}
+							onPress={() => this.setIsVisible(true)}
+						/>
 					</View>
-					<Button title='My Values' onPress={() => this.setIsVisible(true)} />
+
 					<BottomSheet
 						isVisible={this.state.isVisible}
-						containerStyle={{ backgroundColor: "rgba(0.5, 0.25, 0, 0.2)" }}
+						containerStyle={{
+							backgroundColor: "rgba(0.5, 0.25, 0, 0.2)",
+						}}
 						onBackButtonPress={() => this.setIsVisible(false)}
-						//Toggling the visibility state on the click of the back botton
 						onBackdropPress={() => this.setIsVisible(false)}
 					>
-						<View>
-							{this.state.myValues.map((l, i) => (
-								<ListItem
-									key={i}
-									containerStyle={l.containerStyle}
-									onPress={l.onPress}
-								>
-									<ListItem.Content>
-										<ListItem.Title style={l.titleStyle}>
-											{l.title}
-										</ListItem.Title>
-									</ListItem.Content>
-								</ListItem>
-							))}
-						</View>
+						{this.state.myValues.map((l, i) => (
+							<ListItem key={i} containerStyle={l.containerStyle} onPress={l.onPress}>
+								<ListItem.Content>
+									<ListItem.Title style={l.titleStyle}>{l.title}</ListItem.Title>
+									<ListItem.Subtitle>{l.value}</ListItem.Subtitle>
+								</ListItem.Content>
+								<ListItem.Chevron
+									type='font-awesome'
+									name='window-close-o'
+									color='black'
+									onPress={() => {
+										Alert.alert(
+											"Delete Value",
+											`Are you sure you want to delete the value: ${l.title}: ${l.value} ?`,
+											[
+												{
+													text: "Cancel",
+													style: "cancel",
+													onPress: () => console.log("Cancel Pressed"),
+												},
+												{
+													text: "YES",
+													onPress: () => {
+														let filteredValues = this.state.myValues.filter(
+															(item) => item.title !== l.title
+														)
+														this.setState({
+															myValues: filteredValues,
+														})
+													},
+												},
+											]
+										)
+									}}
+								/>
+							</ListItem>
+						))}
+						<ListItem
+							key={"add"}
+							containerStyle={{ backgroundColor: "green" }}
+							onPress={() => {
+								this.toggleModal()
+							}}
+						>
+							<ListItem.Content>
+								<ListItem.Title style={{ color: "white" }}>Add</ListItem.Title>
+							</ListItem.Content>
+						</ListItem>
+						<ListItem
+							key={"cancel"}
+							containerStyle={{ backgroundColor: "red" }}
+							onPress={() => this.setIsVisible(false)}
+						>
+							<ListItem.Content>
+								<ListItem.Title style={{ color: "white" }}>Cancel</ListItem.Title>
+							</ListItem.Content>
+						</ListItem>
 					</BottomSheet>
 					<Modal
 						transparent={false}
@@ -208,14 +257,24 @@ class Main extends Component {
 							<Text>Name of Value:</Text>
 							<TextInput
 								value={this.state.valueName}
-								onChangeText={(valueName) => this.setState({ valueName })}
+								onChangeText={(valueName) =>
+									this.setState({ valueName: valueName })
+								}
 							/>
+							<Text>Value:</Text>
 							<TextInput
 								value={this.state.valueNumber}
 								keyboardType='numeric'
-								onChangeText={(valueNumber) => this.setState({ valueNumber })}
+								onChangeText={(valueNumber) =>
+									this.setState({ valueNumber: valueNumber })
+								}
 							/>
-							<Button title='Add Value' onPress={() => this.addValue()} />
+							<Button
+								title='Add Value'
+								onPress={() => {
+									this.addValue()
+								}}
+							/>
 						</View>
 					</Modal>
 				</SafeAreaView>
@@ -286,6 +345,11 @@ const styles = StyleSheet.create({
 		justifyContent: "space-around",
 		alignItems: "stretch",
 		backgroundColor: "#454e54",
+	},
+	valueBtn: {
+		flex: 1,
+		paddingTop: 20,
+		paddingBottom: 20,
 	},
 })
 

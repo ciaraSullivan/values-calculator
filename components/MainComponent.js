@@ -230,7 +230,7 @@ class Main extends Component {
 						))}
 						<ListItem
 							key={"add"}
-							containerStyle={{ backgroundColor: "green" }}
+							containerStyle={{ backgroundColor: "#09657d" }}
 							onPress={() => {
 								this.toggleModal()
 							}}
@@ -241,7 +241,7 @@ class Main extends Component {
 						</ListItem>
 						<ListItem
 							key={"cancel"}
-							containerStyle={{ backgroundColor: "red" }}
+							containerStyle={{ backgroundColor: "#454e54" }}
 							onPress={() => this.setIsVisible(false)}
 						>
 							<ListItem.Content>
@@ -255,7 +255,7 @@ class Main extends Component {
 						onRequestClose={() => this.toggleModal()}
 					>
 						<View style={styles.modalContainer}>
-							<Text style={styles.modalText}>Name of Value:</Text>
+							<Text style={styles.modalText}>Name</Text>
 							<TextInput
 								value={this.state.valueName}
 								style={styles.formInput}
@@ -263,7 +263,7 @@ class Main extends Component {
 									this.setState({ valueName: valueName })
 								}
 							/>
-							<Text style={styles.modalText}>Value:</Text>
+							<Text style={styles.modalText}>Value</Text>
 							<TextInput
 								value={this.state.valueNumber}
 								style={styles.formInput}
@@ -381,9 +381,14 @@ const styles = StyleSheet.create({
 		borderRadius: 10,
 	},
 	formInput: {
-		padding: 25,
+		marginTop: 25,
+		marginBottom: 25,
+		padding: 5,
 		fontSize: 50,
 		textAlign: "right",
+		borderColor: "gray",
+		borderRadius: 5,
+		borderWidth: 2,
 	},
 	modalText: {
 		fontSize: 30,

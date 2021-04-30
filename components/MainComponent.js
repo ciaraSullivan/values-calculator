@@ -1,8 +1,29 @@
 import React, { Component } from "react"
-import { Alert } from "react-native"
-import { Text, View, StyleSheet, Button, Modal, TouchableOpacity, TextInput } from "react-native"
+import {
+	Text,
+	View,
+	StyleSheet,
+	Modal,
+	TouchableOpacity,
+	TextInput,
+	Alert,
+	Button,
+} from "react-native"
 import { BottomSheet, ListItem } from "react-native-elements"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
+import { connect } from "react-redux"
+import { addValue, delValue } from "../redux/ActionCreators"
+
+const mapStateToProps = (state) => {
+	return {
+		values: state.values.values,
+	}
+}
+
+const mapDispatchToProps = {
+	addValue: (name, value) => addValue(name, value),
+	delValue: (name) => delValue(name),
+}
 
 class Main extends Component {
 	constructor(props) {
@@ -15,47 +36,17 @@ class Main extends Component {
 			valueNumber: "",
 			isVisible: false,
 			showModal: false,
-			myValues: [
-				{
-					title: "example 2",
-					value: "869",
-					onPress: () => {
-						this._onPressButton("869")
-						this.setIsVisible(false)
-					},
-				},
-				{
-					title: "example 1",
-					value: "822",
-					onPress: () => {
-						this._onPressButton("822")
-						this.setIsVisible(false)
-					},
-				},
-			],
 		}
 	}
 
 	addValue() {
 		if (Number(this.state.valueNumber)) {
-			const newValue = {
-				title: this.state.valueName,
-				value: this.state.valueNumber,
-				onPress: () => {
-					this._onPressButton(this.state.valueNumber)
-					this.setIsVisible(false)
-				},
-			}
-
-			const newMyValues = [newValue, ...this.state.myValues]
-
-			this.setState({
-				myValues: newMyValues,
-				valueName: "",
-				valueNumber: "",
-			})
-			console.log(newMyValues)
+			this.props.addValue(this.state.valueName, this.state.valueNumber)
 			this.toggleModal()
+			this.setState({
+				valueNumber: "",
+				valueName: "",
+			})
 		} else {
 			Alert.alert("Invalid Number", "Please enter a valid number as the value.", [
 				{
@@ -161,8 +152,10 @@ class Main extends Component {
 		return (
 			<SafeAreaProvider>
 				<SafeAreaView style={{ flex: 1 }}>
-					<Text style={styles.title}>Values Calculator</Text>
 					<View style={styles.container}>
+						<View style={{ flex: 1, backgroundColor: "#fff" }}>
+							<Text style={styles.title}>Values Calculator</Text>
+						</View>
 						<View style={styles.result}>
 							<Text style={styles.resultText}>{this.state.resultText}</Text>
 						</View>
@@ -175,13 +168,15 @@ class Main extends Component {
 							<View style={styles.numbers}>{rows}</View>
 							<View style={styles.operations}>{ops}</View>
 						</View>
-						<Button
-							title='My Values'
-							style={styles.valueBtn}
-							onPress={() => this.setIsVisible(true)}
-						/>
+						<View style={{ flex: 1 }}>
+							<TouchableOpacity
+								style={styles.valueBtn}
+								onPress={() => this.setIsVisible(true)}
+							>
+								<Text style={styles.valueText}>My Values</Text>
+							</TouchableOpacity>
+						</View>
 					</View>
-
 					<BottomSheet
 						isVisible={this.state.isVisible}
 						containerStyle={{
@@ -190,16 +185,29 @@ class Main extends Component {
 						onBackButtonPress={() => this.setIsVisible(false)}
 						onBackdropPress={() => this.setIsVisible(false)}
 					>
-						{this.state.myValues.map((l, i) => (
-							<ListItem key={i} containerStyle={l.containerStyle} onPress={l.onPress}>
+						{this.props.values.map((l, i) => (
+							<ListItem
+								key={i}
+								containerStyle={l.containerStyle}
+								onPress={() => {
+									this._onPressButton(l.value)
+									this.setIsVisible(false)
+								}}
+							>
 								<ListItem.Content>
-									<ListItem.Title style={l.titleStyle}>{l.title}</ListItem.Title>
-									<ListItem.Subtitle>{l.value}</ListItem.Subtitle>
+									<ListItem.Title style={{ fontSize: 25 }}>
+										{l.title}
+									</ListItem.Title>
+									<ListItem.Subtitle style={{ fontSize: 15 }}>
+										{l.value}
+									</ListItem.Subtitle>
 								</ListItem.Content>
 								<ListItem.Chevron
 									type='font-awesome'
-									name='window-close-o'
+									name='times'
 									color='black'
+									iconStyle={{ padding: 10 }}
+									size={20}
 									onPress={() => {
 										Alert.alert(
 											"Delete Value",
@@ -212,14 +220,7 @@ class Main extends Component {
 												},
 												{
 													text: "YES",
-													onPress: () => {
-														let filteredValues = this.state.myValues.filter(
-															(item) => item.title !== l.title
-														)
-														this.setState({
-															myValues: filteredValues,
-														})
-													},
+													onPress: () => this.props.delValue(l.title),
 												},
 											]
 										)
@@ -235,7 +236,7 @@ class Main extends Component {
 							}}
 						>
 							<ListItem.Content>
-								<ListItem.Title style={{ color: "white" }}>Add</ListItem.Title>
+								<ListItem.Title style={styles.valueOptions}>Add</ListItem.Title>
 							</ListItem.Content>
 						</ListItem>
 						<ListItem
@@ -244,37 +245,41 @@ class Main extends Component {
 							onPress={() => this.setIsVisible(false)}
 						>
 							<ListItem.Content>
-								<ListItem.Title style={{ color: "white" }}>Cancel</ListItem.Title>
+								<ListItem.Title style={styles.valueOptions}>Cancel</ListItem.Title>
 							</ListItem.Content>
 						</ListItem>
 					</BottomSheet>
 					<Modal
-						transparent={false}
+						transparent={true}
 						visible={this.state.showModal}
 						onRequestClose={() => this.toggleModal()}
 					>
-						<View>
-							<Text>Name of Value:</Text>
+						<View style={styles.modalContainer}>
+							<Text style={styles.modalText}>Name of Value:</Text>
 							<TextInput
 								value={this.state.valueName}
+								style={styles.formInput}
 								onChangeText={(valueName) =>
 									this.setState({ valueName: valueName })
 								}
 							/>
-							<Text>Value:</Text>
+							<Text style={styles.modalText}>Value:</Text>
 							<TextInput
 								value={this.state.valueNumber}
+								style={styles.formInput}
 								keyboardType='numeric'
 								onChangeText={(valueNumber) =>
 									this.setState({ valueNumber: valueNumber })
 								}
 							/>
-							<Button
-								title='Add Value'
+							<TouchableOpacity
+								style={styles.valueBtn}
 								onPress={() => {
 									this.addValue()
 								}}
-							/>
+							>
+								<Text style={styles.valueText}>Add Value</Text>
+							</TouchableOpacity>
 						</View>
 					</Modal>
 				</SafeAreaView>
@@ -284,11 +289,16 @@ class Main extends Component {
 }
 
 const styles = StyleSheet.create({
-	title: {
-		textAlign: "center",
-	},
 	container: {
 		flex: 1,
+		backgroundColor: "#09657d",
+	},
+	title: {
+		textAlign: "center",
+		fontSize: 15,
+		color: "black",
+		letterSpacing: 4,
+		paddingTop: 25,
 	},
 	row: {
 		flexDirection: "row",
@@ -297,7 +307,7 @@ const styles = StyleSheet.create({
 		alignItems: "stretch",
 	},
 	resultText: {
-		fontSize: 25,
+		fontSize: 35,
 		paddingRight: 10,
 		color: "black",
 	},
@@ -327,8 +337,9 @@ const styles = StyleSheet.create({
 		alignItems: "flex-end",
 	},
 	calculationText: {
-		fontSize: 50,
+		fontSize: 55,
 		paddingRight: 10,
+		paddingBottom: 5,
 		color: "black",
 	},
 	buttons: {
@@ -347,10 +358,41 @@ const styles = StyleSheet.create({
 		backgroundColor: "#454e54",
 	},
 	valueBtn: {
-		flex: 1,
-		paddingTop: 20,
-		paddingBottom: 20,
+		alignItems: "center",
+		padding: 20,
+		backgroundColor: "#09657d",
+		color: "white",
+	},
+	valueText: {
+		textAlign: "center",
+		color: "white",
+		letterSpacing: 4,
+		paddingTop: 5,
+		fontSize: 20,
+	},
+	modalContainer: {
+		justifyContent: "center",
+		paddingTop: 60,
+		paddingRight: 15,
+		paddingLeft: 15,
+		paddingBottom: 60,
+		backgroundColor: "white",
+		marginTop: 80,
+		borderRadius: 10,
+	},
+	formInput: {
+		padding: 25,
+		fontSize: 50,
+		textAlign: "right",
+	},
+	modalText: {
+		fontSize: 30,
+	},
+	valueOptions: {
+		padding: 7,
+		fontSize: 25,
+		color: "white",
 	},
 })
 
-export default Main
+export default connect(mapStateToProps, mapDispatchToProps)(Main)
